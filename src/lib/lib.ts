@@ -51,10 +51,10 @@ export type Tab = "home" | "summary";
 
 export const T = {
   pink:    "#FF2878",  // สีชมพูหลัก ใช้ปุ่ม, accent
-  rose:    "#0d0b0c",  // สีชมพูอ่อนกว่า ใช้ gradient
+  rose:    "#FF7AB5",  // สีชมพูอ่อนกว่า ใช้ gradient
   blush:   "#FFADD0",  // สีชมพูพาสเทล ใช้ border บางจุด
   petal:   "#FFF0F6",  // สีพื้นหลังชมพูอ่อนมาก
-  bg:      "#56293a",  // สีพื้นหลังทั้งหน้า
+  bg:      "#FDF0F5",  // สีพื้นหลังทั้งหน้า
   white:   "#FFFFFF",  // สีขาว
   deep:    "#1A0A10",  // สีดำอมม่วง ใช้กับตัวหนังสือหลัก
   mauve:   "#C8A0B0",  // สีเทาอมชมพู ใช้ข้อความรอง
