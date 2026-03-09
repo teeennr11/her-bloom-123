@@ -61,7 +61,7 @@ export default function InsightsTab({ cycles, sorted, phase, day, avg, pred }: P
       {/* ถ้าไม่มีข้อมูล แสดง empty state */}
       {!cycles.length ? (
         <div className={`${cardBase} px-6 py-16 text-center`}>
-          <div className="text-[32px] mb-3">🌸</div>
+          <div className="text-[32px] mb-3"></div>
           <p className="font-serif text-[16px] mb-2 text-[#1A0A10]">No data yet</p>
           <p className="font-sans text-[13px] font-light text-[#C8A0B0]">Log your first cycle on the Home tab to see insights</p>
         </div>
