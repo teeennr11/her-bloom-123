@@ -92,14 +92,14 @@ export default function HistoryRow({ cycle, phase, onEdit, onDelete }: Props) {
       {/* ขวา: ปุ่ม Edit + Delete */}
       <div className="flex gap-1.5 shrink-0">
         <button onClick={() => onEdit(cycle)}
-          className="font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg bg-[#FFF8FB] text-[#C8A0B0] border border-[#EDD0DC] hover:bg-[#F0CCD8]/20 transition-all cursor-pointer">
+          className="font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg bg-[#FFF8FB] text-[#f5dc39] border border-[#f5dc39] hover:bg-[#F0CCD8]/20 transition-all cursor-pointer">
           Edit
         </button>
         <button onClick={del}
           className={`font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg transition-all duration-200 border cursor-pointer
             ${confirm
               ? "bg-[#f81e1e] text-[#f81e1e] border-[#f81e1e]" // สีเปลี่ยนเมื่อรอยืนยัน
-              : "bg-[#FFF8FB] text-[#C8A0B0] border-[#EDD0DC]"}`}>
+              : "bg-[#FFF8FB] text-[#C8A0B0] border-[#f81e1e]"}`}>
           {confirm ? "Confirm?" : "Delete"} {/* ข้อความเปลี่ยน */}
         </button>
       </div>
