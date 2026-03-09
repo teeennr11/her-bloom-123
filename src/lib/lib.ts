@@ -54,7 +54,7 @@ export const T = {
   rose:    "#FF7AB5",  // สีชมพูอ่อนกว่า ใช้ gradient
   blush:   "#FFADD0",  // สีชมพูพาสเทล ใช้ border บางจุด
   petal:   "#FFF0F6",  // สีพื้นหลังชมพูอ่อนมาก
-  bg:      "#FDF0F5",  // สีพื้นหลังทั้งหน้า
+  bg:      "#fdf1f0",  // สีพื้นหลังทั้งหน้า
   white:   "#FFFFFF",  // สีขาว
   deep:    "#1A0A10",  // สีดำอมม่วง ใช้กับตัวหนังสือหลัก
   mauve:   "#C8A0B0",  // สีเทาอมชมพู ใช้ข้อความรอง
@@ -64,7 +64,7 @@ export const T = {
   inputBdr:"#EDD0DC",  // สี border ของ input
   shadow:  "0 4px 20px rgba(255,40,120,0.08)", // เงา card มาตรฐาน
   grad:    "linear-gradient(135deg,#FF2878,#FF7AB5)", // gradient ปุ่มหลัก
-  sideW:   230,        // ความกว้าง sidebar (px)
+  sideW:   280,        // ความกว้าง sidebar (px)
 };
 
 export const SERIF = "'Libre Baskerville', serif"; // ฟอนต์ serif ใช้กับหัวข้อ, ตัวเลข
