@@ -98,7 +98,7 @@ export default function HistoryRow({ cycle, phase, onEdit, onDelete }: Props) {
         <button onClick={del}
           className={`font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg transition-all duration-200 border cursor-pointer
             ${confirm
-              ? "bg-[#FFF2F7] text-[#FF2878] border-[#F0CCD8]" // สีเปลี่ยนเมื่อรอยืนยัน
+              ? "bg-[#f81e1e] text-[#f81e1e] border-[#f81e1e]" // สีเปลี่ยนเมื่อรอยืนยัน
               : "bg-[#FFF8FB] text-[#C8A0B0] border-[#EDD0DC]"}`}>
           {confirm ? "Confirm?" : "Delete"} {/* ข้อความเปลี่ยน */}
         </button>

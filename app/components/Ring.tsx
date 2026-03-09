@@ -5,10 +5,10 @@ import { Phase } from "../../src/lib/lib";
 
 // ข้อมูลสีและจำนวนวันของแต่ละ phase สำหรับวาดส่วนโค้ง
 const PHASES_ARC = [
-  { from: "#D94070", to: "#E8557A", days: 5  }, // Period: 5 วัน
-  { from: "#F07A9E", to: "#F599B4", days: 8  }, // Follicular: 8 วัน
-  { from: "#F5B8CC", to: "#FAD0DE", days: 4  }, // Ovulation: 4 วัน
-  { from: "#C878A8", to: "#DCA0C4", days: 11 }, // Luteal: 11 วัน
+  { from: "#347d4e", to: "#E8557A", days: 5  }, // Period: 5 วัน
+  { from: "#6377a3", to: "#F599B4", days: 8  }, // Follicular: 8 วัน
+  { from: "#a8b938", to: "#FAD0DE", days: 4  }, // Ovulation: 4 วัน
+  { from: "#706a82", to: "#DCA0C4", days: 11 }, // Luteal: 11 วัน
 ];                                                // รวม = 28 วัน
 
 export default function Ring({ day, phase }: { day: number; phase: Phase }) {

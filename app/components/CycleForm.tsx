@@ -63,7 +63,7 @@ export default function CycleForm({ phase, edit, onSave, onCancel }: Props) {
           <label className={lblClass}>Start Date <span className="text-[#FF2878]">*</span></label>
           <input
             type="date" max={today} value={form.startDate}
-            className={`${inpBase} ${errs.startDate ? 'border-[#FF2878]' : 'border-[#EDD0DC]'}`} // เส้นแดงเมื่อ error
+            className={`${inpBase} ${errs.startDate ? 'border-[#FFFFFF]' : 'FF2878-[#EDD0DC]'}`} // เส้นแดงเมื่อ error
             style={{ '--tw-ring-color': `${phase.color}18`, outlineColor: phase.color } as React.CSSProperties} // ใช้สี phase สำหรับ focus ring
             onChange={e => { setForm({ ...form, startDate: e.target.value }); setErrs({ ...errs, startDate: undefined }); }} // ล้าง error ทันทีที่แก้ไข
           />
@@ -75,7 +75,7 @@ export default function CycleForm({ phase, edit, onSave, onCancel }: Props) {
           <label className={lblClass}>End Date <span className="font-light text-[#C8A0B0]">(optional)</span></label>
           <input
             type="date" min={form.startDate || undefined} max={today} value={form.endDate || ''} // min ล็อกไม่ให้เลือกก่อน startDate
-            className={`${inpBase} ${errs.endDate ? 'border-[#FF2878]' : 'border-[#EDD0DC]'}`}
+            className={`${inpBase} ${errs.endDate ? 'border-[#FFFFFF]' : 'border-[#FFFFFF]'}`}
             style={{ '--tw-ring-color': `${phase.color}18`, outlineColor: phase.color } as React.CSSProperties}
             onChange={e => { setForm({ ...form, endDate: e.target.value }); setErrs({ ...errs, endDate: undefined }); }}
           />
