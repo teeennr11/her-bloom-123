@@ -3,13 +3,7 @@
 // ════════════════════════════════════════════════════════════════
 "use client";
 import { useState } from "react";
-// Firebase Auth functions
-import {
-  createUserWithEmailAndPassword, // สร้างบัญชีใหม่
-  signInWithEmailAndPassword,      // เข้าสู่ระบบด้วย email/password
-  updateProfile,                   // อัปเดต displayName หลังสมัคร
-} from "firebase/auth";
-import { auth } from "../../src/lib/firebase";
+import { supabase } from "../../src/lib/supabase";
 
 export default function Login({ onLogin }: { onLogin: (name: string) => void }) {
 
@@ -38,33 +32,42 @@ export default function Login({ onLogin }: { onLogin: (name: string) => void }) 
         // ตรวจสอบ password ตรงกัน
 
         if (pass.length < 6) { setErr("Password must be at least 6 characters"); setLoading(false); return; }
-        // Firebase ต้องการ password อย่างน้อย 6 ตัว
+        // Supabase ต้องการ password อย่างน้อย 6 ตัว
 
-        // สร้างบัญชีใหม่ใน Firebase Auth
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        // สร้างบัญชีใหม่ใน Supabase Auth — display_name เก็บใน user_metadata
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: pass,
+          options: { data: { display_name: name } },
+        });
+        if (error) throw error;
 
-        // บันทึก displayName หลังสร้างบัญชีสำเร็จ
-        await updateProfile(cred.user, { displayName: name });
+        // ถ้าโปรเจกต์เปิด "confirm email" ไว้ session จะยังเป็น null จนกว่าจะกดยืนยันในอีเมล
+        if (!data.session) {
+          setErr("Account created — please check your email to confirm before signing in.");
+          setIsReg(false);
+          setLoading(false);
+          return;
+        }
 
         onLogin(name); // บอก page.tsx ว่า login สำเร็จ
       } else {
         // ── Login mode ──────────────────────────────────────
-        const cred = await signInWithEmailAndPassword(auth, email, pass);
-        // Firebase จะ authenticate และคืน credential
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) throw error;
 
-        // ใช้ displayName ถ้ามี ถ้าไม่มีใช้ email แทน
-        onLogin(cred.user.displayName || email);
+        // ใช้ display_name ถ้ามี ถ้าไม่มีใช้ email แทน
+        onLogin(data.user.user_metadata?.display_name || email);
       }
-    } catch (e: any) {
-      // แปลง Firebase error code เป็นข้อความที่อ่านง่าย
+    } catch (e) {
+      // แปลง Supabase error message เป็นข้อความที่อ่านง่าย
+      const message = e instanceof Error ? e.message : "Something went wrong";
       const msg: Record<string, string> = {
-        "auth/email-already-in-use": "Email already in use",
-        "auth/user-not-found":       "Account not found",
-        "auth/wrong-password":       "Incorrect password",
-        "auth/invalid-email":        "Invalid email address",
-        "auth/invalid-credential":   "Invalid email or password",
+        "User already registered":     "Email already in use",
+        "Invalid login credentials":   "Invalid email or password",
+        "Email not confirmed":         "Please confirm your email before signing in",
       };
-      setErr(msg[e.code] || e.message); // ถ้าไม่มีใน map ใช้ message ดิบ
+      setErr(msg[message] || message); // ถ้าไม่มีใน map ใช้ message ดิบ
     }
     setLoading(false); // ปิด loading ไม่ว่าจะสำเร็จหรือไม่
   }
@@ -149,6 +152,9 @@ export default function Login({ onLogin }: { onLogin: (name: string) => void }) 
               />
               {/* ปุ่ม toggle แสดง/ซ่อน password */}
               <button onClick={() => setShow(!show)}
+                type="button"
+                aria-label={show ? "Hide password" : "Show password"}
+                aria-pressed={show}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-[15px] text-[#FFADD0]">
                 {show ? "◎" : "○"} {/* ไอคอนตา: เปิด = ◎, ปิด = ○ */}
               </button>

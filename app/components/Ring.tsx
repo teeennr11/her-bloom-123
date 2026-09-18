@@ -19,17 +19,17 @@ export default function Ring({ day, phase }: { day: number; phase: Phase }) {
   const cx = sz / 2; // จุดศูนย์กลาง x = 120
   const cy = sz / 2; // จุดศูนย์กลาง y = 120
 
-  let cumDays = 0; // สะสมจำนวนวัน เพื่อคำนวณ offset ของแต่ละส่วนโค้ง
-
   const arcs = PHASES_ARC.map((p, i) => {
     const len = (p.days / 28) * C;
     // ความยาวส่วนโค้ง = สัดส่วนวัน × เส้นรอบวงทั้งหมด
 
+    // จำนวนวันสะสมของ phase ก่อนหน้าทั้งหมด (คำนวณใหม่ทุกรอบแทนการ mutate
+    // ตัวแปรร่วมข้ามการวนซ้ำ — ปลอดภัยกับ concurrent rendering ของ React)
+    const cumDays = PHASES_ARC.slice(0, i).reduce((sum, x) => sum + x.days, 0);
+
     const offset = -(cumDays / 28) * C;
     // strokeDashoffset: เลื่อนจุดเริ่มของส่วนโค้ง
     // ลบ เพราะต้องการเลื่อนทวนเข็ม
-
-    cumDays += p.days; // สะสมวัน
 
     // วันเริ่ม/สิ้นสุดของ phase นี้ (index 0=Period, 1=Follicular, ...)
     const starts = [1, 6, 14, 18][i];
@@ -49,7 +49,7 @@ export default function Ring({ day, phase }: { day: number; phase: Phase }) {
   const ey = cy + R * Math.sin(endRad);       // y ของ dot
 
   return (
-    <div className="relative mx-auto" style={{ width: sz, height: sz }}>
+    <div className="relative mx-auto w-[240px] h-[240px]">
       <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`} className="absolute top-0 left-0 overflow-visible">
         <defs>
           {/* Gradient สำหรับ sweep (ไม่ได้ใช้ใน code ปัจจุบัน แต่ reserve ไว้) */}

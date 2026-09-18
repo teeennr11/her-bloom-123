@@ -87,8 +87,8 @@ export default function Landing({ onLogin }: { onLogin: () => void }) {
             { n: "02", title: "Smart Prediction", desc: "Predicts your next period, fertile window, and ovulation from your own pattern. Gets more accurate every cycle." },
             { n: "03", title: "Mood & Symptoms",  desc: "Track mood, symptoms, and flow intensity daily. Understand yourself more deeply with every cycle." },
             { n: "04", title: "Cycle History",    desc: "View past cycles with visual bars. See daily flow and shifting patterns over time." },
-            { n: "05", title: "Cloud Sync",       desc: "Data syncs in real time via Firebase. Access your cycle from any device, anywhere, anytime." },
-            { n: "06", title: "Private & Secure", desc: "Your data belongs to you alone. Never shared, always protected with Firebase Auth." },
+            { n: "05", title: "Cloud Sync",       desc: "Data syncs in real time via Supabase. Access your cycle from any device, anywhere, anytime." },
+            { n: "06", title: "Private & Secure", desc: "Your data belongs to you alone. Never shared, always protected with Supabase Auth." },
           ].map(f => (
             <div key={f.n} className="p-6 md:p-9 transition-colors duration-150 bg-white hover:bg-[#FFFAF8]">
               <p className="font-serif text-[12px] mb-4 tracking-[0.04em] text-[#FFADD0]">{f.n}</p>

@@ -1,9 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Phase, Cycle, Form, EF } from "../../src/lib/lib";
 
 // Props ที่ component รับเข้ามา
-interface Props { phase: Phase; edit: Cycle | null; onSave: (f: Form, id?: string) => void; onCancel: () => void; }
+interface Props { phase: Phase; edit: Cycle | null; onSave: (f: Form, id?: string) => Promise<void>; onCancel: () => void; }
+
+// แปลง Cycle ที่กำลังแก้ไข (หรือไม่มี) ให้เป็นค่าเริ่มต้นของฟอร์ม
+const formFromEdit = (edit: Cycle | null): Form =>
+  edit
+    ? { startDate: edit.startDate, endDate: edit.endDate, notes: edit.notes, flow: edit.flow || "", moods: edit.moods || [] }
+    : EF;
 
 // ตัวเลือกระดับการไหล พร้อมจำนวนหยดน้ำที่แสดง
 const FLOWS = [
@@ -19,14 +25,12 @@ const SYMPTOMS = [
 ];
 
 export default function CycleForm({ phase, edit, onSave, onCancel }: Props) {
-  const [form, setForm] = useState<Form>(EF); // state ฟอร์ม, EF = Empty Form (ค่าเริ่มต้นว่างเปล่า)
+  // ค่าเริ่มต้นคำนวณจาก edit โดยตรง (lazy initializer) แทนการ sync ด้วย useEffect —
+  // parent (HomeTab) ใส่ key={edit?.id ?? "new"} ให้ ทำให้ component นี้ remount
+  // ใหม่ทั้งตัวทุกครั้งที่ edit เปลี่ยนเป็นคนละ record กัน ฟอร์ม/error จึงรีเซ็ตเองโดยไม่ต้องมี effect
+  const [form, setForm] = useState<Form>(() => formFromEdit(edit));
   const [errs, setErrs] = useState<Partial<Record<keyof Form, string>>>({}); // error message แยกตาม field
-
-  useEffect(() => {
-    // ถ้ามี edit record → ดึงค่ามาใส่ฟอร์ม / ถ้าไม่มี → reset เป็น empty
-    setForm(edit ? { startDate: edit.startDate, endDate: edit.endDate, notes: edit.notes, flow: edit.flow || "", moods: edit.moods || [] } : EF);
-    setErrs({}); // ล้าง error ทุกครั้งที่ edit เปลี่ยน
-  }, [edit]);
+  const [saving, setSaving] = useState(false); // กำลังส่งข้อมูลไป backend อยู่ไหม
 
   function validate() {
     const e: Partial<Record<keyof Form, string>> = {};
@@ -35,7 +39,19 @@ export default function CycleForm({ phase, edit, onSave, onCancel }: Props) {
     setErrs(e); return !Object.keys(e).length; // คืน true ถ้าไม่มี error
   }
 
-  function save() { if (!validate()) return; onSave(form, edit?.id); setForm(EF); setErrs({}); } // validate → ส่งข้อมูลพร้อม id (edit mode) → reset
+  async function save() {
+    if (!validate()) return;
+    setSaving(true);
+    try {
+      await onSave(form, edit?.id); // รอผลจริงก่อนเคลียร์ฟอร์ม
+      setForm(EF);
+      setErrs({});
+    } catch {
+      // เก็บค่าฟอร์มไว้ให้ผู้ใช้แก้/ลองใหม่ — ข้อความ error แสดงผ่าน banner ของ page.tsx แล้ว
+    } finally {
+      setSaving(false);
+    }
+  }
 
   // เพิ่ม/ลบ symptom ออกจาก array moods
   function toggleSymptom(s: string) {
@@ -96,7 +112,7 @@ export default function CycleForm({ phase, edit, onSave, onCancel }: Props) {
                   className={`flex flex-col items-center gap-1 py-3 px-2 rounded-2xl transition-all border-[1.5px] min-h-[44px] ${isActive ? 'border-[#FF2878] bg-[#FFF0F6]' : 'border-[#F0CCD8] bg-white'}`}
                 >
                   <div className="flex gap-px">
-                    {[0, 1, 2].map(i => <span key={i} className="text-[13px]" style={{ opacity: i < f.drops ? 1 : 0.2 }}>💧</span>)} {/* หยดที่เกิน drops จะโปร่งใส */}
+                    {[0, 1, 2].map(i => <span key={i} className={`text-[13px] ${i < f.drops ? "opacity-100" : "opacity-20"}`}>💧</span>)} {/* หยดที่เกิน drops จะโปร่งใส */}
                   </div>
                   <span className={`font-sans text-[11px] ${isActive ? 'font-semibold text-[#FF2878]' : 'font-light text-[#A08090]'}`}>{f.label}</span>
                 </button>
@@ -138,15 +154,15 @@ export default function CycleForm({ phase, edit, onSave, onCancel }: Props) {
         {/* Action Buttons */}
         <div className="flex gap-2.5 mt-0.5">
           <button
-            type="button" onClick={save}
-            className="font-sans flex-1 py-3 text-[14px] font-semibold text-white rounded-2xl bg-gradient-to-br from-[#FF2878] to-[#FF7AB5] shadow-[0_6px_20px_rgba(255,40,120,0.26)] transition-all active:scale-[0.98] min-h-[48px]"
+            type="button" onClick={save} disabled={saving}
+            className="font-sans flex-1 py-3 text-[14px] font-semibold text-white rounded-2xl bg-gradient-to-br from-[#FF2878] to-[#FF7AB5] shadow-[0_6px_20px_rgba(255,40,120,0.26)] transition-all active:scale-[0.98] min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
           >
-            {edit ? "Update Record" : "Save Record"} {/* ข้อความเปลี่ยนตาม mode */}
+            {saving ? "Saving..." : edit ? "Update Record" : "Save Record"} {/* ข้อความเปลี่ยนตาม mode/สถานะ */}
           </button>
           {edit && ( // แสดงปุ่ม Cancel เฉพาะตอน edit mode
             <button
-              type="button" onClick={onCancel}
-              className="font-sans px-5 py-3 text-[14px] font-medium rounded-2xl border border-[#F0CCD8] bg-[#FFF0F6] text-[#C8A0B0] min-h-[48px]"
+              type="button" onClick={onCancel} disabled={saving}
+              className="font-sans px-5 py-3 text-[14px] font-medium rounded-2xl border border-[#F0CCD8] bg-[#FFF0F6] text-[#C8A0B0] min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancel
             </button>

@@ -10,8 +10,8 @@ import { InfoCard } from "./Cards";
 type Props = {
   userName: string; day: number; phase: Phase; cycles: Cycle[]; sorted: Cycle[];
   avg: number; pred: Pred | null; edit: Cycle | null; // pred = การพยากรณ์รอบถัดไป, edit = record ที่กำลังแก้ไข
-  onSave: (f: Form, id?: string) => void; onEdit: (c: Cycle) => void;
-  onDelete: (id: string) => void; onCancelEdit: () => void;
+  onSave: (f: Form, id?: string) => Promise<void>; onEdit: (c: Cycle) => void;
+  onDelete: (id: string) => Promise<void>; onCancelEdit: () => void;
 };
 
 export default function HomeTab({ userName, day, phase, cycles, sorted, avg, pred, edit, onSave, onEdit, onDelete, onCancelEdit }: Props) {
@@ -110,7 +110,7 @@ export default function HomeTab({ userName, day, phase, cycles, sorted, avg, pre
         <div className="flex flex-col h-full">
           {/* MOBILE: smaller padding; DESKTOP: larger padding */}
           <div className="flex-1 rounded-[28px] px-4 py-5 md:px-6 md:py-[26px] bg-white border border-[#F0CCD8] shadow-[0_4px_20px_rgba(255,40,120,0.08)]">
-            <CycleForm phase={phase} edit={edit} onSave={onSave} onCancel={onCancelEdit} />
+            <CycleForm key={edit?.id ?? "new"} phase={phase} edit={edit} onSave={onSave} onCancel={onCancelEdit} />
           </div>
         </div>
       </div>

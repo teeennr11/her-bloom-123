@@ -47,33 +47,9 @@ export interface Form {
 export type Tab = "home" | "summary";
 
 
-// ── ค่าคงที่สำหรับ Design (สี, ขนาด, เงา) ─────────────────────
-
-export const T = {
-  pink:    "#FF2878",  // สีชมพูหลัก ใช้ปุ่ม, accent
-  rose:    "#FF7AB5",  // สีชมพูอ่อนกว่า ใช้ gradient
-  blush:   "#FFADD0",  // สีชมพูพาสเทล ใช้ border บางจุด
-  petal:   "#FFF0F6",  // สีพื้นหลังชมพูอ่อนมาก
-  bg:      "#fdf1f0",  // สีพื้นหลังทั้งหน้า
-  white:   "#FFFFFF",  // สีขาว
-  deep:    "#1A0A10",  // สีดำอมม่วง ใช้กับตัวหนังสือหลัก
-  mauve:   "#C8A0B0",  // สีเทาอมชมพู ใช้ข้อความรอง
-  muted:   "#A08090",  // สีเทาอมชมพูเข้มขึ้น
-  border:  "#F0CCD8",  // สี border ของ card
-  inputBg: "#FFF8FB",  // สีพื้นหลัง input
-  inputBdr:"#EDD0DC",  // สี border ของ input
-  shadow:  "0 4px 20px rgba(255,40,120,0.08)", // เงา card มาตรฐาน
-  grad:    "linear-gradient(135deg,#FF2878,#FF7AB5)", // gradient ปุ่มหลัก
-  sideW:   280,        // ความกว้าง sidebar (px)
-};
-
-export const SERIF = "'Libre Baskerville', serif"; // ฟอนต์ serif ใช้กับหัวข้อ, ตัวเลข
-export const SANS  = "'Inter', sans-serif";         // ฟอนต์ sans-serif ใช้กับข้อความทั่วไป
-
-
 // ── ข้อมูลทั้ง 4 Phase ของรอบเดือน ─────────────────────────────
 
-export const PHASES: Phase[] = [
+const PHASES: Phase[] = [
   {
     id: "period",              // ช่วงมีประจำเดือน
     name: "Period Phase",

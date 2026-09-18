@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "app/components/Navbar.tsx", "app/components/CycleList.tsx", "app/components/Dailylog.tsx", "app/components/CycleCard.tsx", "app/components/PredictionCard.js"  ],
+  ],
   "exclude": ["node_modules"]
 }

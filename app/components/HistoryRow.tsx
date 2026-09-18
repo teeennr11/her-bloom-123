@@ -7,8 +7,8 @@ import { Cycle, Phase, dur, fmt } from "../../src/lib/lib";
 interface Props {
   cycle: Cycle;
   phase: Phase;
-  onEdit: (c: Cycle) => void;    // กดปุ่ม Edit
-  onDelete: (id: string) => void; // กดปุ่ม Delete
+  onEdit: (c: Cycle) => void;              // กดปุ่ม Edit
+  onDelete: (id: string) => Promise<void>; // กดปุ่ม Delete
 }
 
 // Map flow id → label พร้อมไอคอน
@@ -25,14 +25,23 @@ export default function HistoryRow({ cycle, phase, onEdit, onDelete }: Props) {
   // ครั้งแรก: confirm = false → เปลี่ยนเป็น true + ตั้ง timer
   // ครั้งที่สอง (ภายใน 3 วิ): confirm = true → ลบจริง
 
+  const [deleting, setDeleting] = useState(false);
+  // deleting = true ระหว่างที่ request ลบกำลังทำงานอยู่ (แสดง "Deleting..." + ปิดปุ่ม)
+
   const d = dur(cycle.startDate, cycle.endDate); // ระยะเวลา (วัน) ของรอบนี้
 
-  function del() {
-    if (confirm) {
-      onDelete(cycle.id); // กดครั้งที่ 2 → ลบจริง
-    } else {
+  async function del() {
+    if (!confirm) {
       setConfirm(true); // กดครั้งแรก → เปลี่ยนเป็น "Confirm?"
       setTimeout(() => setConfirm(false), 3000); // หลัง 3 วิ reset กลับ
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await onDelete(cycle.id); // กดครั้งที่ 2 → ลบจริง
+    } finally {
+      setDeleting(false); // ปิด loading ไม่ว่าจะสำเร็จหรือไม่ (error แสดงผ่าน banner ของ page.tsx)
     }
   }
 
@@ -67,7 +76,7 @@ export default function HistoryRow({ cycle, phase, onEdit, onDelete }: Props) {
           {/* หมายเหตุ (ถ้ามี) */}
           {cycle.notes && (
             <div className="font-serif text-[12px] italic mt-0.5 text-[#D8B0C0] truncate">
-              "{cycle.notes}"
+              &ldquo;{cycle.notes}&rdquo;
             </div>
           )}
 
@@ -91,16 +100,16 @@ export default function HistoryRow({ cycle, phase, onEdit, onDelete }: Props) {
 
       {/* ขวา: ปุ่ม Edit + Delete */}
       <div className="flex gap-1.5 shrink-0">
-        <button onClick={() => onEdit(cycle)}
-          className="font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg bg-[#FFF8FB] text-[#f5dc39] border border-[#f5dc39] hover:bg-[#F0CCD8]/20 transition-all cursor-pointer">
+        <button onClick={() => onEdit(cycle)} disabled={deleting}
+          className="font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg bg-[#FFF8FB] text-[#f5dc39] border border-[#f5dc39] hover:bg-[#F0CCD8]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
           Edit
         </button>
-        <button onClick={del}
-          className={`font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg transition-all duration-200 border cursor-pointer
+        <button onClick={del} disabled={deleting}
+          className={`font-sans px-4 py-[5px] text-[11px] font-medium rounded-lg transition-all duration-200 border cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed
             ${confirm
               ? "bg-[#f81e1e] text-[#f81e1e] border-[#f81e1e]" // สีเปลี่ยนเมื่อรอยืนยัน
               : "bg-[#FFF8FB] text-[#C8A0B0] border-[#f81e1e]"}`}>
-          {confirm ? "Confirm?" : "Delete"} {/* ข้อความเปลี่ยน */}
+          {deleting ? "Deleting..." : confirm ? "Confirm?" : "Delete"} {/* ข้อความเปลี่ยน */}
         </button>
       </div>
     </div>

@@ -5,7 +5,7 @@
 // ════════════════════════════════════════════════════════════════
 "use client";
 import { useState } from "react";
-import { Tab, Phase, SERIF, SANS } from "../../src/lib/lib";
+import { Tab, Phase } from "../../src/lib/lib";
 
 // NAV = รายการเมนูทั้งหมด
 const NAV = [
@@ -53,35 +53,34 @@ interface Props {
   onLogout: () => void;       // callback เมื่อกด Sign Out
 }
 
-// ════════════════════════════════════════════════════════════════
-export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
+// class ของปุ่ม hamburger (ใช้ซ้ำหลายที่)
+const hamburgerBtn =
+  "w-[38px] h-[38px] flex items-center justify-center rounded-xl border border-[#F0CCD8] bg-white text-[#A08090] hover:bg-[#FFF5F8] hover:text-[#FF2878] active:scale-95 transition-all shrink-0 cursor-pointer";
 
-  const [isOpen, setIsOpen] = useState(false);
-  // isOpen = state ของ mobile overlay sidebar (true = เปิดอยู่)
+// ── FullSidebarContent: เนื้อหา sidebar แบบเต็ม ─────────────
+// ใช้ใน mobile overlay และสามารถนำไปปรับใช้ใน desktop ด้วย
+// อยู่นอก Sidebar() เพราะถ้าประกาศไว้ข้างในจะกลายเป็น component คนละตัวทุก
+// re-render ทำให้ React ลบ/สร้าง DOM ใหม่หมดและรีเซ็ต state ข้างในทุกครั้ง
+interface FullSidebarContentProps {
+  tab: Tab;
+  userName: string;
+  onTab: (t: Tab) => void;
+  onLogout: () => void;
+  onClose: () => void;
+}
 
-  const [desktopExpanded, setDesktopExpanded] = useState(true);
-  // desktopExpanded = state ของ desktop sidebar
-  // true = กว้าง 240px มีชื่อ / false = แคบ 64px แค่ไอคอน
-
-  // class ของปุ่ม hamburger (ใช้ซ้ำหลายที่)
-  const hamburgerBtn =
-    "w-[38px] h-[38px] flex items-center justify-center rounded-xl border border-[#F0CCD8] bg-white text-[#A08090] hover:bg-[#FFF5F8] hover:text-[#FF2878] active:scale-95 transition-all shrink-0 cursor-pointer";
-
-
-  // ── FullSidebarContent: เนื้อหา sidebar แบบเต็ม ─────────────
-  // ใช้ใน mobile overlay และสามารถนำไปปรับใช้ใน desktop ด้วย
-  const FullSidebarContent = ({ onClose }: { onClose: () => void }) => (
+const FullSidebarContent = ({ tab, userName, onTab, onLogout, onClose }: FullSidebarContentProps) => (
     <>
       {/* Header: โลโก้ + ปุ่มปิด */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-[#F0CCD8] shrink-0">
         <div className="flex items-center gap-3">
           {/* วงกลมโลโก้ hb */}
           <div className="flex items-center justify-center shrink-0 w-[38px] h-[38px] rounded-full border-[1.5px] border-[#FF2878] bg-white shadow-[0_4px_14px_rgba(255,40,120,0.14)]">
-            <span style={{ fontFamily: SERIF }} className="text-[16px] italic text-[#FF2878] tracking-tighter">hb</span>
+            <span className="font-serif text-[16px] italic text-[#FF2878] tracking-tighter">hb</span>
           </div>
           <div>
-            <div style={{ fontFamily: SERIF }} className="text-[15px] font-bold leading-none text-[#3D2C33]">Her Bloom</div>
-            <div style={{ fontFamily: SANS }} className="text-[7px] font-medium tracking-[0.22em] mt-[3px] text-[#FF2878]">CYCLE TRACKER</div>
+            <div className="font-serif text-[15px] font-bold leading-none text-[#3D2C33]">Her Bloom</div>
+            <div className="font-sans text-[7px] font-medium tracking-[0.22em] mt-[3px] text-[#FF2878]">CYCLE TRACKER</div>
           </div>
         </div>
         {/* ปุ่มปิด sidebar */}
@@ -101,8 +100,7 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
                 onTab(item.id); // เปลี่ยนแท็บ
                 onClose();       // ปิด mobile overlay หลังกดเมนู
               }}
-              style={{ fontFamily: SANS }}
-              className={`flex items-center gap-3 w-full text-left text-[13px] px-4 py-3 rounded-xl transition-all duration-200 border min-h-[44px] cursor-pointer ${
+              className={`font-sans flex items-center gap-3 w-full text-left text-[13px] px-4 py-3 rounded-xl transition-all duration-200 border min-h-[44px] cursor-pointer ${
                 active
                   ? "border-[#F0CCD8] bg-[#FFF5F8] text-[#FF2878] font-semibold" // style active
                   : "border-transparent text-[#7A6670] hover:bg-[#FFF5F8] font-normal" // style ปกติ
@@ -120,22 +118,20 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
         {/* แสดงตัวอักษรแรกของชื่อ + ชื่อผู้ใช้ */}
         <div className="flex items-center gap-2.5 px-1">
           <div
-            style={{ fontFamily: SERIF }}
-            className="flex items-center justify-center shrink-0 w-8 h-8 rounded-full text-[13px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6]"
+            className="font-serif flex items-center justify-center shrink-0 w-8 h-8 rounded-full text-[13px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6]"
           >
             {userName[0]?.toUpperCase()} {/* ตัวอักษรแรกของชื่อ เป็น avatar */}
           </div>
           <div>
-            <div style={{ fontFamily: SANS }} className="text-[13px] font-medium text-[#3D2C33]">{userName}</div>
-            <div style={{ fontFamily: SANS }} className="text-[9px] tracking-[0.1em] text-[#7A6670]">MY CYCLE</div>
+            <div className="font-sans text-[13px] font-medium text-[#3D2C33]">{userName}</div>
+            <div className="font-sans text-[9px] tracking-[0.1em] text-[#7A6670]">MY CYCLE</div>
           </div>
         </div>
 
         {/* ปุ่ม Sign Out */}
         <button
           onClick={() => { onLogout(); onClose(); }} // logout แล้วปิด overlay
-          style={{ fontFamily: SANS }}
-          className="w-full flex items-center gap-2 px-3.5 py-2.5 text-[12px] font-semibold text-white rounded-xl bg-gradient-to-r from-[#FF2878] to-[#FF70A6] shadow-[0_4px_16px_rgba(255,40,120,0.28)] hover:opacity-90 transition-all min-h-[44px] cursor-pointer"
+          className="font-sans w-full flex items-center gap-2 px-3.5 py-2.5 text-[12px] font-semibold text-white rounded-xl bg-gradient-to-r from-[#FF2878] to-[#FF70A6] shadow-[0_4px_16px_rgba(255,40,120,0.28)] hover:opacity-90 transition-all min-h-[44px] cursor-pointer"
         >
           {/* ไอคอน logout (ลูกศรออก) */}
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -145,7 +141,17 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
         </button>
       </div>
     </>
-  );
+);
+
+// ════════════════════════════════════════════════════════════════
+export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
+
+  const [isOpen, setIsOpen] = useState(false);
+  // isOpen = state ของ mobile overlay sidebar (true = เปิดอยู่)
+
+  const [desktopExpanded, setDesktopExpanded] = useState(true);
+  // desktopExpanded = state ของ desktop sidebar
+  // true = กว้าง 240px มีชื่อ / false = แคบ 64px แค่ไอคอน
 
   return (
     <>
@@ -192,8 +198,7 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
         <div className="flex justify-center py-4 border-t border-[#F0CCD8]">
           <div
             title={userName}
-            style={{ fontFamily: SERIF }}
-            className="flex items-center justify-center w-8 h-8 rounded-full text-[12px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6] cursor-default"
+            className="font-serif flex items-center justify-center w-8 h-8 rounded-full text-[12px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6] cursor-default"
           >
             {userName[0]?.toUpperCase()}
           </div>
@@ -216,7 +221,13 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
           // เปิด: เลื่อนเข้าหน้าจอ / ปิด: เลื่อนออกซ้าย
         }`}
       >
-        <FullSidebarContent onClose={() => setIsOpen(false)} />
+        <FullSidebarContent
+          tab={tab}
+          userName={userName}
+          onTab={onTab}
+          onLogout={onLogout}
+          onClose={() => setIsOpen(false)}
+        />
       </aside>
 
 
@@ -240,11 +251,11 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
           {desktopExpanded && (
             <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
               <div className="flex items-center justify-center shrink-0 w-[38px] h-[38px] rounded-full border-[1.5px] border-[#FF2878] bg-white shadow-[0_4px_14px_rgba(255,40,120,0.14)]">
-                <span style={{ fontFamily: SERIF }} className="text-[16px] italic text-[#FF2878] tracking-tighter">hb</span>
+                <span className="font-serif text-[16px] italic text-[#FF2878] tracking-tighter">hb</span>
               </div>
               <div className="min-w-0">
-                <div style={{ fontFamily: SERIF }} className="text-[15px] font-bold leading-none text-[#3D2C33] truncate">Her Bloom</div>
-                <div style={{ fontFamily: SANS }} className="text-[7px] font-medium tracking-[0.22em] mt-1 text-[#FF2878]">CYCLE TRACKER</div>
+                <div className="font-serif text-[15px] font-bold leading-none text-[#3D2C33] truncate">Her Bloom</div>
+                <div className="font-sans text-[7px] font-medium tracking-[0.22em] mt-1 text-[#FF2878]">CYCLE TRACKER</div>
               </div>
             </div>
           )}
@@ -266,9 +277,8 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
               <button
                 key={item.id}
                 onClick={() => onTab(item.id)}
-                style={{ fontFamily: SANS }}
                 title={!desktopExpanded ? item.label : undefined} // tooltip เฉพาะตอนยุบ
-                className={`flex items-center w-full text-left text-[13px] rounded-xl transition-all duration-200 border min-h-[44px] cursor-pointer ${
+                className={`font-sans flex items-center w-full text-left text-[13px] rounded-xl transition-all duration-200 border min-h-[44px] cursor-pointer ${
                   desktopExpanded ? "gap-2.5 px-4 py-3" : "justify-center px-0 py-3"
                   // ขยาย: มีชื่อ + padding ปกติ / ยุบ: จัดกลาง ไม่มีชื่อ
                 } ${
@@ -290,16 +300,15 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
             // ── Expanded mode: แสดงชื่อ + ปุ่ม sign out เต็ม ──
             <>
               <div className="flex items-center gap-2.5 px-2">
-                <div style={{ fontFamily: SERIF }} className="flex items-center justify-center shrink-0 w-8 h-8 rounded-full text-[13px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6]">
+                <div className="font-serif flex items-center justify-center shrink-0 w-8 h-8 rounded-full text-[13px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6]">
                   {userName[0]?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <div style={{ fontFamily: SANS }} className="text-[13px] font-medium text-[#3D2C33] truncate">{userName}</div>
-                  <div style={{ fontFamily: SANS }} className="text-[9px] tracking-[0.1em] text-[#7A6670]">MY CYCLE</div>
+                  <div className="font-sans text-[13px] font-medium text-[#3D2C33] truncate">{userName}</div>
+                  <div className="font-sans text-[9px] tracking-[0.1em] text-[#7A6670]">MY CYCLE</div>
                 </div>
               </div>
-              <button onClick={onLogout} style={{ fontFamily: SANS }}
-                className="w-full flex items-center gap-2 px-3.5 py-2.5 text-[12px] font-semibold text-white rounded-xl bg-gradient-to-r from-[#FF2878] to-[#FF70A6] shadow-[0_4px_16px_rgba(255,40,120,0.28)] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">
+              <button onClick={onLogout} className="font-sans w-full flex items-center gap-2 px-3.5 py-2.5 text-[12px] font-semibold text-white rounded-xl bg-gradient-to-r from-[#FF2878] to-[#FF70A6] shadow-[0_4px_16px_rgba(255,40,120,0.28)] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">
                 <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                   <path d="M13 15l5-5-5-5M18 10H7M10 3H4a1 1 0 00-1 1v12a1 1 0 001 1h6" />
                 </svg>
@@ -310,8 +319,7 @@ export default function Sidebar({ tab, userName, onTab, onLogout }: Props) {
             // ── Collapsed mode: แค่ avatar + ไอคอน logout ──
             <>
               <div className="flex justify-center">
-                <div title={userName} style={{ fontFamily: SERIF }}
-                  className="flex items-center justify-center w-8 h-8 rounded-full text-[13px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6] cursor-default">
+                <div title={userName} className="font-serif flex items-center justify-center w-8 h-8 rounded-full text-[13px] font-medium text-white italic bg-gradient-to-r from-[#FF2878] to-[#FF70A6] cursor-default">
                   {userName[0]?.toUpperCase()}
                 </div>
               </div>

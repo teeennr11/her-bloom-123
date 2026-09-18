@@ -4,24 +4,17 @@
 // นำเข้า React hooks
 import { useState, useEffect } from "react";
 
-// นำเข้า Firebase Auth functions
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
-// onAuthStateChanged = subscribe ฟังการเปลี่ยนแปลงสถานะ login
-// signOut = ฟังก์ชัน logout
-// User = type ของข้อมูลผู้ใช้ Firebase
+// นำเข้า type ของ user จาก Supabase
+import type { User } from "@supabase/supabase-js";
 
-// นำเข้า Firebase Realtime Database functions
-import { ref, onValue, set } from "firebase/database";
-// ref = สร้าง reference (ที่อยู่) ในฐานข้อมูล เช่น "users/uid/cycles"
-// onValue = subscribe ฟังการเปลี่ยนแปลงข้อมูลแบบ realtime
-// set = เขียนข้อมูลทับ (overwrite) ที่ reference นั้น
+// นำเข้า instance ของ Supabase (ใช้ auth ฝั่ง client)
+import { supabase } from "../src/lib/supabase";
 
-// นำเข้า instance ของ Firebase
-import { auth, db } from "../src/lib/firebase";
+// นำเข้า data access ของตาราง cycles (เรียก Supabase ตรง ป้องกันด้วย Row Level Security)
+import { fetchCycles, saveCycle, deleteCycle } from "../src/lib/cycles";
 
 // นำเข้า type และฟังก์ชันจาก lib
 import {
-  T, SERIF, SANS,           // ค่า design token และ font
   Cycle, Form, Tab,          // types
   getPhase, avgCycle,        // ฟังก์ชันคำนวณ phase และค่าเฉลี่ย
   dayOfCycle, predict,       // ฟังก์ชันคำนวณวัน และทำนายรอบ
@@ -43,7 +36,7 @@ export default function Page() {
   // user = ข้อมูลผู้ใช้ที่ login อยู่ (null = ยังไม่ login)
 
   const [authLoading, setAuthLoading] = useState(true);
-  // authLoading = true ระหว่างที่ Firebase กำลังตรวจสอบว่า login อยู่ไหม
+  // authLoading = true ระหว่างที่ Supabase กำลังตรวจสอบว่า login อยู่ไหม
   // ป้องกัน flash ของหน้า landing ก่อนตรวจสอบเสร็จ
 
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -59,53 +52,51 @@ export default function Page() {
   // showLogin = แสดงหน้า login แทนหน้า landing หรือไม่
   // กด "Get Started" หรือ "Sign In" บน Landing จะเป็น true
 
+  const [error, setError] = useState<string | null>(null);
+  // error = ข้อความ error ล่าสุดที่จะแสดงเป็น banner (null = ไม่มี)
+
   // ── useEffect: ฟัง Auth State ──────────────────────────────
   useEffect(() => {
-    // onAuthStateChanged จะถูกเรียกทุกครั้งที่สถานะ login เปลี่ยน
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);           // อัปเดต user (u = null ถ้า logout)
+    // onAuthStateChange จะถูกเรียกทุกครั้งที่สถานะ login เปลี่ยน (รวมถึงตอน mount ครั้งแรก)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser); // อัปเดต user (null = ยังไม่ login / logout แล้ว)
+      if (!nextUser) setCycles([]); // ล้างข้อมูลทันทีที่ตรวจพบว่า logout/session หมดอายุ
       setAuthLoading(false); // ตรวจสอบเสร็จแล้ว ปิด loading
     });
-    return () => unsub(); // cleanup: ยกเลิก subscription เมื่อ component unmount
+    return () => subscription.unsubscribe(); // cleanup: ยกเลิก subscription เมื่อ component unmount
   }, []); // [] = รันครั้งเดียวตอน mount
 
 
-  // ── useEffect: ฟังข้อมูลรอบเดือนจาก Firebase ──────────────
+  // ── useEffect: โหลดข้อมูลรอบเดือนจาก Supabase ─────────────
   useEffect(() => {
-    if (!user) {
-      setCycles([]); // ถ้า logout แล้ว ล้างข้อมูลรอบเดือน
-      return;
-    }
+    if (!user) return; // cycles ว่างอยู่แล้ว (ค่าเริ่มต้น หรือถูกล้างจาก auth listener/logout() แล้ว)
 
-    // สร้าง reference ไปยัง "users/{uid}/cycles" ใน database
-    const unsub = onValue(ref(db, `users/${user.uid}/cycles`), (snap) => {
-      const data = snap.val(); // snap.val() = ข้อมูลดิบจาก Firebase (object หรือ null)
-
-      // Object.values แปลง { id1: {...}, id2: {...} } → [{...}, {...}]
-      setCycles(data ? (Object.values(data) as Cycle[]) : []);
-    });
-
-    return () => unsub(); // cleanup เมื่อ user เปลี่ยนหรือ component unmount
+    // ดึงเฉพาะ cycles ของ user คนนี้ (RLS กรองให้อัตโนมัติ)
+    fetchCycles()
+      .then(setCycles)
+      .catch((e: Error) => setError("Load failed: " + e.message));
   }, [user]); // รันใหม่ทุกครั้งที่ user เปลี่ยน
 
 
   // ── handleSave: บันทึกรอบเดือนใหม่หรืออัปเดตที่มีอยู่ ────
+  // throw ต่อเมื่อ error เพื่อให้ CycleForm รู้ว่าล้มเหลว จะได้ไม่เคลียร์ฟอร์มทิ้ง
   async function handleSave(f: Form, id?: string) {
-    if (!user) { alert("Not logged in"); return; } // ป้องกันถ้า user เป็น null
+    if (!user) { setError("Not logged in"); throw new Error("Not logged in"); }
 
     try {
-      const newId = id || Date.now().toString();
-      // ถ้ามี id (กำลัง edit) ใช้ id เดิม / ถ้าไม่มี (สร้างใหม่) ใช้ timestamp เป็น id
+      // ถ้ามี id (edit) ใช้ id เดิม / ถ้าไม่มี (สร้างใหม่) จะสร้าง id ให้
+      const cycle = await saveCycle(f, id);
 
-      // เขียนข้อมูลไปที่ "users/{uid}/cycles/{newId}"
-      await set(ref(db, `users/${user.uid}/cycles/${newId}`), {
-        id: newId, // เก็บ id ไว้ใน object ด้วย เพื่อให้ดึงออกมาได้ง่าย
-        ...f,      // spread form data ทั้งหมด (startDate, endDate, notes, flow, moods)
-      });
+      // อัปเดต state ในเครื่อง: แทนที่ตัวเดิม (ถ้ามี) ด้วยผลลัพธ์ที่บันทึกแล้ว
+      setCycles((prev) => [...prev.filter((c) => c.id !== cycle.id), cycle]);
 
       setEdit(null); // ล้าง edit state หลังบันทึกสำเร็จ
-    } catch (e: any) {
-      alert("Save failed: " + e.message); // แสดง error ถ้าบันทึกไม่ได้
+      setError(null);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Something went wrong";
+      setError("Save failed: " + message);
+      throw e;
     }
   }
 
@@ -115,17 +106,20 @@ export default function Page() {
     if (!user) return;
 
     try {
-      // set ค่าเป็น null = ลบ node นั้นออกจาก Firebase
-      await set(ref(db, `users/${user.uid}/cycles/${id}`), null);
-    } catch (e: any) {
-      alert("Delete failed: " + e.message);
+      await deleteCycle(id);
+      setCycles((prev) => prev.filter((c) => c.id !== id));
+      setError(null);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Something went wrong";
+      setError("Delete failed: " + message);
+      throw e;
     }
   }
 
 
   // ── logout: ออกจากระบบ ─────────────────────────────────────
   async function logout() {
-    await signOut(auth);     // เรียก Firebase sign out
+    await supabase.auth.signOut(); // เรียก Supabase sign out
     setShowLogin(false);     // กลับไปหน้า landing
     setCycles([]);            // ล้างข้อมูล
     setEdit(null);            // ล้าง edit state
@@ -153,35 +147,23 @@ export default function Page() {
   // ทำนายรอบถัดไป
   const pred = predict(cycles);
 
-  // ชื่อผู้ใช้ ลองดึงจาก displayName ก่อน ถ้าไม่มีใช้ email
+  // ชื่อผู้ใช้ ลองดึงจาก display_name (user_metadata) ก่อน ถ้าไม่มีใช้ email
   const userName =
-    auth.currentUser?.displayName ||
-    user?.displayName ||
+    user?.user_metadata?.display_name ||
     user?.email?.split("@")[0] || // เอาแค่ส่วนก่อน @ ของ email
     "";
 
 
   // ── Loading Screen ─────────────────────────────────────────
   if (authLoading) return (
-    // แสดงโลโก้ตรงกลางระหว่างรอ Firebase ตรวจสอบ session
-    <div style={{
-      minHeight: "100vh", display: "flex",
-      alignItems: "center", justifyContent: "center",
-      background: T.bg, // สีพื้นหลัง
-    }}>
-      <div style={{ textAlign: "center" }}>
+    // แสดงโลโก้ตรงกลางระหว่างรอ Supabase ตรวจสอบ session
+    <div className="min-h-screen flex items-center justify-center bg-[#fdf1f0]">
+      <div className="text-center">
         {/* วงกลมโลโก้ */}
-        <div style={{
-          width: 42, height: 42, borderRadius: "50%",
-          border: `1.5px solid ${T.pink}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "white",
-          margin: "0 auto 16px",
-          boxShadow: "0 4px 16px rgba(255,40,120,0.15)",
-        }}>
-          <span style={{ fontFamily: SERIF, fontSize: 17, fontStyle: "italic", color: T.pink }}>hb</span>
+        <div className="w-[42px] h-[42px] rounded-full border-[1.5px] border-[#FF2878] flex items-center justify-center bg-white mx-auto mb-4 shadow-[0_4px_16px_rgba(255,40,120,0.15)]">
+          <span className="font-serif text-[17px] italic text-[#FF2878]">hb</span>
         </div>
-        <p style={{ fontFamily: SANS, fontSize: 12, color: T.mauve }}>Loading...</p>
+        <p className="font-sans text-[12px] text-[#C8A0B0]">Loading...</p>
       </div>
     </div>
   );
@@ -201,7 +183,7 @@ export default function Page() {
     // Container หลัก: flex row ให้ Sidebar อยู่ซ้าย, content อยู่ขวา
     // h-[100dvh] = ความสูง 100% ของหน้าจอ (dvh = dynamic viewport height รองรับ mobile)
     // overflow-hidden = ไม่ให้ทั้งหน้า scroll (ให้ main scroll แทน)
-    <div className="flex h-[100dvh] overflow-hidden" style={{ background: T.bg }}>
+    <div className="flex h-[100dvh] overflow-hidden bg-[#fdf1f0]">
 
       {/* Sidebar: เมนูซ้าย */}
       <Sidebar
@@ -215,6 +197,20 @@ export default function Page() {
       {/* Main content area: scroll ได้แนวตั้ง */}
       {/* padding ปรับตาม breakpoint: mobile น้อย → desktop มาก */}
       <main className="flex-1 h-full overflow-y-auto px-3 py-4 sm:px-5 sm:py-5 md:px-8 md:py-8 lg:px-[52px] lg:py-[42px]">
+
+        {/* Error banner: แสดงเมื่อโหลด/บันทึก/ลบข้อมูลล้มเหลว ปิดได้ด้วยปุ่ม × */}
+        {error && (
+          <div className="flex items-start justify-between gap-3 mb-4 rounded-[10px] border border-[#FFADD0] bg-[#FFF0F4] px-3.5 py-2.5 font-sans text-[12px] font-semibold text-[#FF2878]">
+            <span>⚠ {error}</span>
+            <button
+              onClick={() => setError(null)}
+              aria-label="Dismiss error"
+              className="shrink-0 leading-none text-[#FF2878] cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* แสดง HomeTab ถ้า tab === "home" */}
         {tab === "home" && (
